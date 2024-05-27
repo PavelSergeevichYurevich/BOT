@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    <title>Main</title>
+</head>
+
+<body>
+    <h1 style="text-align: center;">Main</h1>
+    <h2 style="text-align: center;">Hello, <b id="user">{{ context.username }}</b></h2>
+  
+    <table>
+        <tbody>
+            {%for search_request in context.search_requests%}
+                <tr>
+                    <th>{{loop.index}}</th>
+                    <th class="task">{{search_request[1]}}</th>
+                    <th class="task"><a href='{{search_request[0]}}'>{{search_request[0]}}</a></th>
+                </tr>
+            {%endfor%}
+        </tbody>
+    </table>
+
+    <div class="div" style="margin: auto;">
+        <button class="button" onclick="window.location.href='/'">На главную</button>
+        <button id = "downloadView" class="button">Скачать музыку</button>
+        <button id="tracks" class="button">История запросов</button>
+    </div>
+
+    <form id='searchForm'>
+        <label>Name for search:</label>
+        <input id="inputNameMusic">
+        <button id="btnGetMusic">Get track</button>
+        <audio controls id="audioPlayer"></audio><br>
+    </form>
+  
+    <script defer>
+    const tracks = document.querySelector('#tracks');
+    const downloadView = document.querySelector('#downloadView')
+    const username = document.querySelector('#user').textContent;
+    downloadView.addEventListener('click', function() {
+        const searchForm = document.querySelector('#searchForm')
+        searchForm.setAttribute('style', 'display: block')
+    })
+    tracks.addEventListener('click', function() {
+        fetch("/tracks/", {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                username: username,
+            })
+        })
+        .then(res => {
+            if (res.redirected) {
+                window.location.href = res.url;
+                return;
+            } 
+            else
+                return res.text();
+        });
+    })
+
+    const btnGetMusic = document.getElementById('btnGetMusic')
+    btnGetMusic.addEventListener('click', async function(event){
+        event.preventDefault()
+        const inputNameMusic = document.getElementById('inputNameMusic').value
+        const data = {"username": username, "search_string": inputNameMusic}
+        response = await fetch('/download/',
+            {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(data)
+            }
+        )
+        if (response.ok) {
+            const blob = await response.blob();
+            const audioPlayer = document.getElementById('audioPlayer');
+            audioPlayer.src = URL.createObjectURL(blob)
+            const link = document.createElement('a');
+            link.href = audioPlayer.src;
+            link.download = inputNameMusic + '.mp3';
+            link.textContent = 'ССЫЛКА НА СКАЧКУ'
+            const searchForm = document.querySelector('#searchForm')
+            searchForm.appendChild(link)
+            
+            //audioPlayer.player()
+        }else{
+            console.log('Не получен файл')
+        }
+    })
+      
+        
+
+    </script>
+</body>
+</html>

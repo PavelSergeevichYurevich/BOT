@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    <title>Login</title>
+</head>
+<body>
+    <div class="main">
+        <h2>Login</h2>
+        <form method="get" id="checkForm" onsubmit="send()">
+            <p class="textField" id="emailText"><span>Username:</span></p>
+            <input type="textField" id="email" name="email" required oninput="check()">
+            <p class="textField" id="passwordText">Password:</p>
+            <input type="password" id="password" name="password" required>
+            <input type="submit" value="Login">
+        </form>
+        <div id="response"></div>
+        <button onclick="window.location.href='/'">На главную</button>
+        <button onclick="window.location.href='/register/'">Регистрация</button>
+    </div>
+
+    <script defer>
+        const form = document.querySelector('#checkForm')
+        form.addEventListener('submit', function(e) {e.preventDefault()})
+        let cook = document.cookie;
+        let str = cook.split('; ');
+        let cookieObject = {};
+        let curr;
+        for (let i = 0; i < str.length; ++i) {
+            curr = str[i].split('=');
+            cookieObject[curr[0]] = curr[1];
+        }
+        function check() {
+            let checkMail = document.querySelector("#email").value
+            if (checkMail in cookieObject) {
+                name = checkMail
+                console.log(name)
+                url_redirect = '/search_page/'+name
+                window.location.href=url_redirect
+            }
+        }
+        async function send(){
+            const username = document.querySelector("#email").value;
+            const password = document.querySelector("#password").value;
+            fetch("/check/", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    username: username,
+                    password: password
+                })
+            })
+            .then(res => {
+                if (res.redirected) {
+                    window.location.href = res.url;
+                    return;
+                } 
+                else
+                    return res.text();
+                })
+                .then(data => {
+                    document.getElementById("response").innerHTML = data;
+                })
+                 .catch(error => {
+                    console.error(error);
+                });
+        }
+
+    </script>
+</body>
+</html>

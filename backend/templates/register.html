@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    <title>Register</title>
+</head>
+<body>
+    <div class="main">
+        <h2>Registration</h2>
+        <form id="checkForm" onsubmit="send()">
+
+            <p class="textField" id="emailText"><span>Username:</span></p>
+            <input type="textField" id="email" name="email" required>
+
+            <p class="textField" id="passwordText">Password:</p>
+            <input type="password" id="password" name="password" required>
+
+            <input type="submit" value="Register">
+        </form>
+        <button onclick="window.location.href='/'">На главную</button>
+        <button onclick="window.location.href='/login/'">Вход</button>
+
+    </div>
+
+    <script defer>
+        const form = document.querySelector('#checkForm')
+        form.addEventListener('submit', function(e) {e.preventDefault()})
+
+        async function send(){
+            let username = document.querySelector("#email");
+            let password = document.querySelector("#password");
+            let expDate = new Date;
+            expDate.setTime((new Date).getTime() + 604800000);
+            document.cookie = username.value+";expires="+expDate.toGMTString()+";path=/";
+
+            fetch("/register", {
+                method: "POST",
+                headers: {"Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    username: username.value,
+                    password: password.value,
+                })
+            })
+            .then(res => {
+                if (res.redirected) {
+                    window.location.href = res.url;
+                    return;
+                } 
+                else if (res.status == 401) {
+                    alert('User already registered!')
+                    username.value = ''
+                    password.value = ''
+                    return;
+                }
+                else 
+                    return res.text();
+                });
+            
+        }
+
+    </script>
+</body>
+</html>
