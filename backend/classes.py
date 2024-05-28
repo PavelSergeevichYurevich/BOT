@@ -68,10 +68,6 @@ class Connect():
         sql = f'SELECT url_music, name_music FROM musics WHERE user_id = {user_id}'
         self.cursor.execute(sql)
         tracks = self.cursor.fetchall()
-        """ search_tracks:list = []
-        for track in tracks:
-            search_tracks.append(tracks)
-        return search_tracks """
         return tracks
 
     def __del__(self):
