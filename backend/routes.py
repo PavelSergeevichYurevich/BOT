@@ -8,9 +8,21 @@ from classes import Connect
 from schemas import UserCheckSchema, UserCreateSchema, UserSearchSchema, TrackOutSchema
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from passlib.context import CryptContext
 
+SECRET_KEY = "60dad50dcf49cdb04ff89b51a6c5b3abcb6eeba1a628b96b1f57c06a838d3383"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 10080
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 music_parser_router = APIRouter()
 templates = Jinja2Templates(directory="templates")
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
 
 @music_parser_router.get('/')
 def index(request: Request):
@@ -54,7 +66,7 @@ def check_us(request:Request, checking_user: UserCheckSchema):
     connect = Connect('database.db')
     users:list = connect.get_all()
     for user in users:
-        if (user[1] == checking_user.username) and (user[2] == checking_user.password):
+        if (user[1] == checking_user.username) and verify_password(checking_user.password, user[2]):
             username = user[1]
             return RedirectResponse(url=f"/search_page/{username}", status_code=status.HTTP_302_FOUND)
     else:
@@ -65,7 +77,8 @@ def register(request: Request, user: UserCreateSchema, response: Response):
         connect = Connect('database.db')
         if (not user.telegram_id):
             if not connect.get_user_username(username=user.username):
-                connect.insert(username = user.username, password = user.password, telegram_id = user.telegram_id)
+                password = get_password_hash(user.password)
+                connect.insert(username = user.username, password = password, telegram_id = user.telegram_id)
                 response.status_code = status.HTTP_201_CREATED
                 return RedirectResponse(url=f"/search_page/{user.username}", status_code=status.HTTP_302_FOUND)
             else:
@@ -81,7 +94,8 @@ def register(request: Request, user: UserCreateSchema, response: Response):
                     response.status_code = status.HTTP_202_ACCEPTED
                     return response
                 else:
-                    connect.insert(username = user.username, password = user.password, telegram_id = user.telegram_id)
+                    password = get_password_hash(user.password)
+                    connect.insert(username = user.username, password = password, telegram_id = user.telegram_id)
                     response.status_code = status.HTTP_201_CREATED
                     return response
                 
